@@ -351,4 +351,4 @@ async def annotation_updated(sid: str, data: dict) -> None:
 # ASGI app for mounting
 # ──────────────────────────────────────────
 
-socketio_app = socketio.ASGIApp(sio, socketio_path="/ws/socket.io")
+socketio_app = socketio.ASGIApp(sio, socketio_path="/socket.io")

@@ -15,6 +15,7 @@ class AssetStatus(str, enum.Enum):
     PROCESSING = "processing"
     READY = "ready"
     ERROR = "error"
+    FAILED = "failed"
     ARCHIVED = "archived"
 
 
