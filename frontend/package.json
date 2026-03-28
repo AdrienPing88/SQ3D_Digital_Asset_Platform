@@ -19,11 +19,13 @@
     "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^7.1.1",
+    "three": "^0.170.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",

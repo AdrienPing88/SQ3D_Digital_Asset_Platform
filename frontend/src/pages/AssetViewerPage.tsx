@@ -2,7 +2,9 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Download, MapPin, MessageSquare } from 'lucide-react';
 import { useAsset } from '../hooks/useAssets';
 import { formatBytes, assetTypeLabel, statusBadgeClass } from '../utils/format';
+import type { AssetType } from '../types';
 import PointCloudViewer from '../components/viewer/PointCloudViewer';
+import ModelViewer from '../components/viewer/ModelViewer';
 
 export default function AssetViewerPage() {
   const { assetId } = useParams<{ assetId: string }>();
@@ -15,7 +17,11 @@ export default function AssetViewerPage() {
     return <div className="py-20 text-center text-gray-500">Asset not found</div>;
   }
 
-  const isPointCloud = ['las', 'laz', 'e57'].includes(asset.asset_type);
+  const POINT_CLOUD_TYPES: AssetType[] = ['las', 'laz', 'e57'];
+  const MODEL_3D_TYPES: AssetType[] = ['glb', 'gltf', 'obj', 'fbx', 'ifc'];
+
+  const isPointCloud = POINT_CLOUD_TYPES.includes(asset.asset_type);
+  const is3DModel = MODEL_3D_TYPES.includes(asset.asset_type);
   const isReady = asset.status === 'ready';
 
   return (
@@ -78,6 +84,8 @@ export default function AssetViewerPage() {
           </div>
         ) : isPointCloud ? (
           <PointCloudViewer assetId={asset.id} tileRootUrl={asset.tile_root_url} />
+        ) : is3DModel ? (
+          <ModelViewer assetId={asset.id} modelUrl={asset.tile_root_url} />
         ) : (
           <div className="flex h-[600px] items-center justify-center text-gray-400">
             <div className="text-center">
