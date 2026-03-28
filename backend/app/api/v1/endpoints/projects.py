@@ -8,7 +8,12 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_project_with_access, require_project_role
+from app.core.dependencies import (
+    get_current_user,
+    get_project_with_access,
+    require_min_project_role,
+    require_project_role,
+)
 from app.models.asset import Asset
 from app.models.project import Project
 from app.models.project_permission import ProjectPermission
@@ -149,7 +154,7 @@ async def get_project(
     project: Project = Depends(get_project_with_access),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get project details."""
+    """Get project details. Requires at least viewer access."""
     asset_count = (
         await db.execute(select(func.count()).where(Asset.project_id == project.id))
     ).scalar() or 0
@@ -177,9 +182,9 @@ async def update_project(
     req: ProjectUpdate,
     project: Project = Depends(get_project_with_access),
     db: AsyncSession = Depends(get_db),
-    _perm=Depends(require_project_role("owner", "admin")),
+    _perm=Depends(require_min_project_role("admin")),
 ):
-    """Update project fields."""
+    """Update project fields. Requires admin or owner role."""
     for field, value in req.model_dump(exclude_unset=True).items():
         setattr(project, field, value)
     await db.commit()
@@ -213,7 +218,7 @@ async def delete_project(
     db: AsyncSession = Depends(get_db),
     _perm=Depends(require_project_role("owner")),
 ):
-    """Soft-delete a project (archive)."""
+    """Soft-delete a project (archive). Requires owner role."""
     project.archived = True
     await db.commit()
     return {"message": "Project archived"}
@@ -226,7 +231,7 @@ async def list_members(
     project: Project = Depends(get_project_with_access),
     db: AsyncSession = Depends(get_db),
 ):
-    """List project members with roles."""
+    """List project members with roles. Requires viewer access or above."""
     result = await db.execute(
         select(ProjectPermission, User)
         .join(User, ProjectPermission.user_id == User.id)
@@ -253,9 +258,9 @@ async def add_member(
     req: ProjectMemberAdd,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-    _perm=Depends(require_project_role("owner", "admin")),
+    _perm=Depends(require_min_project_role("admin")),
 ):
-    """Invite a member to the project by email."""
+    """Invite a member to the project by email. Requires admin or owner role."""
     result = await db.execute(select(User).where(User.email == req.email, User.org_id == user.org_id))
     target = result.scalar_one_or_none()
     if not target:
@@ -289,15 +294,15 @@ async def add_member(
     )
 
 
-@router.patch("/{project_id}/members/{user_id}")
+@router.put("/{project_id}/members/{user_id}")
 async def update_member_role(
     project_id: UUID,
     user_id: UUID,
     req: ProjectMemberUpdate,
     db: AsyncSession = Depends(get_db),
-    _perm=Depends(require_project_role("owner", "admin")),
+    _perm=Depends(require_min_project_role("admin")),
 ):
-    """Change a member's role."""
+    """Change a member's role. Requires admin or owner role."""
     result = await db.execute(
         select(ProjectPermission).where(
             ProjectPermission.project_id == project_id,
@@ -307,6 +312,9 @@ async def update_member_role(
     perm = result.scalar_one_or_none()
     if not perm:
         raise HTTPException(status_code=404, detail="Member not found")
+
+    if perm.role == "owner" and req.role != "owner":
+        raise HTTPException(status_code=400, detail="Cannot demote the project owner")
 
     perm.role = req.role
     await db.commit()
@@ -318,9 +326,9 @@ async def remove_member(
     project_id: UUID,
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _perm=Depends(require_project_role("owner", "admin")),
+    _perm=Depends(require_min_project_role("admin")),
 ):
-    """Remove a member from the project."""
+    """Remove a member from the project. Requires admin or owner role."""
     result = await db.execute(
         select(ProjectPermission).where(
             ProjectPermission.project_id == project_id,
