@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileStack, Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileStack, Eye, Pencil, Trash2, Users, UserPlus, X } from 'lucide-react';
 import { useProject } from '../hooks/useProjects';
 import { useAssets } from '../hooks/useAssets';
 import { useUploadQueue } from '../hooks/useUploadQueue';
@@ -9,6 +9,8 @@ import UploadProgress from '../components/upload/UploadProgress';
 import EditProjectModal from '../components/dashboard/EditProjectModal';
 import DeleteProjectModal from '../components/dashboard/DeleteProjectModal';
 import { formatBytes, formatRelativeTime, assetTypeLabel, statusBadgeClass } from '../utils/format';
+import { getProjectMembers, inviteProjectMember, removeProjectMember } from '../api/auth';
+import type { ProjectMember } from '../api/auth';
 
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -18,7 +20,17 @@ export default function ProjectPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('collaborator');
   useUploadQueue(projectId!);
+
+  useEffect(() => {
+    if (showMembers && projectId) {
+      getProjectMembers(projectId).then(setMembers).catch(() => {});
+    }
+  }, [showMembers, projectId]);
 
   if (loadingProject) {
     return <div className="py-20 text-center text-gray-400">Loading...</div>;
@@ -150,6 +162,100 @@ export default function ProjectPage() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      {/* Members panel */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <button
+          onClick={() => setShowMembers(!showMembers)}
+          className="flex w-full items-center justify-between px-5 py-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-700">
+              Members ({project.member_count})
+            </h2>
+          </div>
+          <span className="text-xs text-gray-400">{showMembers ? 'Hide' : 'Show'}</span>
+        </button>
+
+        {showMembers && (
+          <div className="border-t border-gray-100 px-5 py-4">
+            {/* Invite form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!inviteEmail || !projectId) return;
+                await inviteProjectMember(projectId, inviteEmail, inviteRole);
+                setInviteEmail('');
+                const updated = await getProjectMembers(projectId);
+                setMembers(updated);
+              }}
+              className="mb-4 flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4 text-gray-400" />
+              <input
+                type="email"
+                placeholder="Email address"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+              >
+                <option value="viewer">Viewer</option>
+                <option value="collaborator">Collaborator</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button
+                type="submit"
+                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+              >
+                Invite
+              </button>
+            </form>
+
+            {/* Member list */}
+            {members.length === 0 ? (
+              <p className="text-sm text-gray-400">No members yet</p>
+            ) : (
+              <ul className="divide-y divide-gray-50">
+                {members.map((m) => (
+                  <li key={m.user_id} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600">
+                        {m.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{m.display_name}</p>
+                        <p className="text-xs text-gray-400">{m.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        {m.role}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          if (!projectId) return;
+                          await removeProjectMember(projectId, m.user_id);
+                          setMembers((prev) => prev.filter((x) => x.user_id !== m.user_id));
+                        }}
+                        className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                        title="Remove member"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </div>
 

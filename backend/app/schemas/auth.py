@@ -42,3 +42,18 @@ class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+# ── OAuth2 PKCE ──────────────────────────────
+
+
+class OAuthAuthorizeResponse(BaseModel):
+    """Returned from GET /auth/oauth/{provider}/authorize."""
+    authorization_url: str
+    state: str
+
+
+class OAuthCallbackRequest(BaseModel):
+    """Sent by the frontend after the OAuth redirect."""
+    code: str
+    state: str

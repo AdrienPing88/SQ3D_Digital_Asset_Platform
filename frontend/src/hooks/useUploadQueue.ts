@@ -95,11 +95,11 @@ export function useUploadQueue(projectId: string) {
     const { items, updateItem } = useUploadStore.getState();
 
     for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.status !== 'queued' || activeFiles.current.has(item.file)) continue;
-      activeFiles.current.add(item.file);
+      const current = items[i];
+      if (!current || current.status !== 'queued' || activeFiles.current.has(current.file)) continue;
+      activeFiles.current.add(current.file);
 
-      processUpload(item.file, i, projectId, updateItem, () => {
+      processUpload(current.file, i, projectId, updateItem, () => {
         queryClient.invalidateQueries({ queryKey: ['assets', projectId] });
       });
     }
@@ -110,11 +110,11 @@ export function useUploadQueue(projectId: string) {
     const unsub = useUploadStore.subscribe((state) => {
       const { items, updateItem } = state;
       for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.status !== 'queued' || activeFiles.current.has(item.file)) continue;
-        activeFiles.current.add(item.file);
+        const current = items[i];
+        if (!current || current.status !== 'queued' || activeFiles.current.has(current.file)) continue;
+        activeFiles.current.add(current.file);
 
-        processUpload(item.file, i, projectId, updateItem, () => {
+        processUpload(current.file, i, projectId, updateItem, () => {
           queryClient.invalidateQueries({ queryKey: ['assets', projectId] });
         });
       }
