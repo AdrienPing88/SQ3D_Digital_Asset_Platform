@@ -12,6 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from app.core.config import settings
 from app.core.database import engine
 from app.api.v1.router import api_router
+from app.api.v1.websockets import socketio_app
 
 
 @asynccontextmanager
@@ -48,6 +49,14 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # ──────────────────────────────────────────
 app.include_router(api_router, prefix="/v1")
 
+# ──────────────────────────────────────────
+# WebSocket (Socket.IO)
+# ──────────────────────────────────────────
+app.mount("/ws", socketio_app)
+
+# ──────────────────────────────────────────
+# Health
+# ──────────────────────────────────────────
 
 @app.get("/health")
 async def health_check():
