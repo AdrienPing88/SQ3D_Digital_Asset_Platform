@@ -25,6 +25,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Large asset files
+*.las
+*.laz
+Assets/
+
 # Docker volumes
 pgdata/
 redisdata/
