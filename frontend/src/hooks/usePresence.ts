@@ -78,7 +78,7 @@ function pickColor(userId: string): string {
     hash = (hash << 5) - hash + userId.charCodeAt(i);
     hash |= 0;
   }
-  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length];
+  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length] ?? '#3B82F6';
 }
 
 // ─────────────────────────────────────────

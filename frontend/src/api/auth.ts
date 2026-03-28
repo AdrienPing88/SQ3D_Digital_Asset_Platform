@@ -1,5 +1,5 @@
 import api from './client';
-import type { User, AuthTokens } from '../types';
+import type { User } from '../types';
 
 interface LoginRequest {
   email: string;

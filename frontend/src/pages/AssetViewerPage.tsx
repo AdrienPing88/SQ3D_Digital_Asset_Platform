@@ -5,6 +5,8 @@ import { formatBytes, assetTypeLabel, statusBadgeClass } from '../utils/format';
 import type { AssetType } from '../types';
 import PointCloudViewer from '../components/viewer/PointCloudViewer';
 import ModelViewer from '../components/viewer/ModelViewer';
+import CollaborationOverlay from '../components/viewer/CollaborationOverlay';
+import { usePresence } from '../hooks/usePresence';
 
 export default function AssetViewerPage() {
   const { assetId } = useParams<{ assetId: string }>();
@@ -23,6 +25,7 @@ export default function AssetViewerPage() {
   const isPointCloud = POINT_CLOUD_TYPES.includes(asset.asset_type);
   const is3DModel = MODEL_3D_TYPES.includes(asset.asset_type);
   const isReady = asset.status === 'ready';
+  const { collaborators, connected } = usePresence(asset.project_id);
 
   return (
     <div>
@@ -62,7 +65,8 @@ export default function AssetViewerPage() {
       </div>
 
       {/* Viewer area */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-900">
+      <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-gray-900">
+        <CollaborationOverlay collaborators={collaborators} connected={connected} />
         {!isReady ? (
           <div className="flex h-[600px] items-center justify-center text-gray-400">
             {asset.status === 'processing' ? (
