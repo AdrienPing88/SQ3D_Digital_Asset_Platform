@@ -31,7 +31,10 @@ celery[redis]==5.4.0
 redis==5.2.1
 
 # Geospatial processing
-# pdal==3.4.5  # Requires C++ build tools on Windows — install via conda or VS Build Tools
+pdal==3.4.5
+laspy==2.5.4
+lazrs==0.6.1
+numpy>=1.24.0
 
 # Elasticsearch
 elasticsearch[async]==8.17.0
@@ -51,4 +54,3 @@ python-dotenv==1.0.1
 # Dev / Test
 pytest==8.3.4
 pytest-asyncio==0.25.0
-httpx==0.28.1
